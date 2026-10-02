@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Makan Apa Hari Ini?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fff3f7;--surface:#fff;--ink:#3a1424;--muted:#7d5767;--line:#f3cfdb;--accent:#d6336c;--accent-ink:#fff;--leaf:#b0245a;--chip:#fde2ec;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1f1017;--surface:#2a1621;--ink:#fdeef3;--muted:#c9a3b3;--line:#4a2838;--accent:#ff7aa8;--accent-ink:#2a0a16;--leaf:#ff9fc0;--chip:#3a1d2b}}
+:root[data-theme="dark"]{--bg:#1f1017;--surface:#2a1621;--ink:#fdeef3;--muted:#c9a3b3;--line:#4a2838;--accent:#ff7aa8;--accent-ink:#2a0a16;--leaf:#ff9fc0;--chip:#3a1d2b}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Bricolage Grotesque",system-ui,sans-serif;line-height:1.5}
+main{max-width:960px;margin:0 auto;padding:28px 18px 56px}
+h1{font-size:clamp(2.2rem,8vw,4rem);line-height:1;margin:0 0 10px;font-weight:800;letter-spacing:-.03em}
+.sub{color:var(--muted);margin:0 0 24px;max-width:52ch}
+.bar{display:flex;gap:10px;flex-wrap:wrap}
+input[type=search]{flex:1;min-width:200px;padding:14px 16px;font:inherit;border:2px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink)}
+input:focus,button:focus-visible,select:focus-visible{outline:3px solid var(--leaf);outline-offset:2px}
+button{font:inherit;cursor:pointer}
+.random{padding:14px 20px;border:0;border-radius:12px;background:var(--accent);color:var(--accent-ink);font-weight:800}
+.filters{margin:18px 0 6px;display:flex;flex-direction:column;gap:10px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.row b{font-size:.85rem;color:var(--muted);min-width:64px;font-weight:600}
+.chip{padding:6px 14px;border-radius:999px;border:1px solid var(--line);background:var(--chip);color:var(--ink)}
+.chip[aria-pressed=true]{background:var(--leaf);color:var(--bg);border-color:var(--leaf)}
+.count{color:var(--muted);margin:18px 0 12px;font-size:.95rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:6px}
+.card .e{font-size:2.2rem;line-height:1}
+.card h2{margin:4px 0 0;font-size:1.2rem}
+.card p{margin:0;color:var(--muted);font-size:.95rem}
+.meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:auto;padding-top:8px}
+.tag{font-size:.8rem;padding:2px 10px;border-radius:999px;background:var(--chip)}
+.pick{background:var(--surface);border:2px solid var(--accent);border-radius:14px;padding:18px;margin:18px 0}
+.pick[hidden]{display:none}
+.empty{padding:28px;border:2px dashed var(--line);border-radius:14px;color:var(--muted)}
+</style>
+</head>
+<body>
+<main>
+  <h1>Makan apa hari ini?</h1>
+  <p class="sub">Cari ide makanan dan minuman khas Indonesia. Ketik nama, pilih daerah atau rasa, atau biarkan kami yang memilihkan.</p>
+
+  <div class="bar">
+    <input type="search" id="q" placeholder="Cari nama, bahan, atau daerah..." aria-label="Cari makanan">
+    <button class="random" id="rnd">Pilihkan untukku</button>
+  </div>
+
+  <div class="filters">
+    <div class="row" id="fJenis"><b>Jenis</b></div>
+    <div class="row" id="fRasa"><b>Rasa</b></div>
+    <div class="row" id="fDaerah"><b>Daerah</b></div>
+  </div>
+
+  <div class="pick" id="pick" hidden></div>
+  <div class="count" id="count"></div>
+  <div class="grid" id="grid"></div>
+</main>
+
+<script>
+const D=[
+["Nasi Goreng","🍳","Berat","Jawa","Gurih","Nasi digoreng dengan kecap, bawang, dan telur. Cocok kapan saja."],
+["Soto Ayam","🍲","Sup","Jawa","Gurih","Kuah kuning hangat dengan suwiran ayam, soun, dan koya."],
+["Rendang","🍖","Berat","Sumatra","Pedas","Daging dimasak lama dalam santan dan rempah sampai kering dan pekat."],
+["Gado-gado","🥗","Berat","Jawa","Manis","Sayur rebus dengan bumbu kacang, lontong, dan kerupuk."],
+["Bakso","🍜","Sup","Jawa","Gurih","Bola daging kenyal dalam kuah kaldu, dengan mi dan sambal."],
+["Sate Ayam","🍢","Berat","Madura","Manis","Tusukan ayam bakar dengan saus kacang atau kecap."],
+["Rawon","🥘","Sup","Jawa","Gurih","Sup daging hitam dari kluwek, disantap dengan tauge pendek."],
+["Pempek","🐟","Camilan","Sumatra","Asam","Olahan ikan dan sagu dengan kuah cuko asam-pedas."],
+["Mie Aceh","🌶️","Berat","Sumatra","Pedas","Mi tebal berbumbu kari yang kuat, bisa goreng atau kuah."],
+["Coto Makassar","🍲","Sup","Sulawesi","Gurih","Sup jeroan dan daging sapi dengan bumbu kacang, teman ketupat."],
+["Papeda Kuah Kuning","🐠","Berat","Papua","Asam","Bubur sagu kenyal dengan kuah ikan kuning yang segar."],
+["Ayam Betutu","🍗","Berat","Bali","Pedas","Ayam berbumbu base genep, dimasak lama hingga empuk."],
+["Gudeg","🥥","Berat","Jawa","Manis","Nangka muda dimasak santan dan gula jawa, khas Yogyakarta."],
+["Siomay Bandung","🥟","Camilan","Jawa","Gurih","Dumpling ikan dengan kentang, kol, dan saus kacang."],
+["Martabak Manis","🥞","Dessert","Jawa","Manis","Terang bulan tebal dengan cokelat, keju, atau kacang."],
+["Es Cendol","🍧","Minuman","Jawa","Manis","Cendol hijau, santan, dan gula merah di atas es serut."],
+["Es Teler","🥭","Minuman","Sumatra","Manis","Alpukat, kelapa muda, dan nangka dengan susu dan es."],
+["Wedang Jahe","🫖","Minuman","Jawa","Manis","Minuman jahe hangat untuk malam hujan atau badan lelah."],
+["Pisang Goreng","🍌","Camilan","Jawa","Manis","Pisang digoreng renyah, enak dengan keju atau madu."],
+["Tahu Gejrot","🧆","Camilan","Jawa","Asam","Tahu dengan kuah asam, manis, dan pedas yang menyegarkan."],
+["Pecel Lele","🐟","Berat","Jawa","Pedas","Lele goreng garing dengan lalapan dan sambal terasi."],
+["Sayur Asem","🥬","Sup","Jawa","Asam","Sup sayur segar dengan asam jawa, jagung, dan kacang panjang."],
+["Nasi Padang","🍛","Berat","Sumatra","Pedas","Nasi dengan aneka lauk berbumbu kuat: rendang, gulai, sambal ijo."],
+["Lumpia Semarang","🌯","Camilan","Jawa","Gurih","Kulit tipis berisi rebung dan ayam, digoreng atau basah."]
+];
+const S={q:"",jenis:"Semua",rasa:"Semua",daerah:"Semua"};
+const $=id=>document.getElementById(id);
+const uniq=i=>["Semua",...new Set(D.map(d=>d[i]))];
+function chips(el,key,idx){
+  uniq(idx).forEach(v=>{
+    const b=document.createElement("button");b.className="chip";b.textContent=v;
+    b.setAttribute("aria-pressed",v==="Semua");
+    b.onclick=()=>{S[key]=v;[...el.querySelectorAll(".chip")].forEach(c=>c.setAttribute("aria-pressed",c===b));render()};
+    el.appendChild(b);
+  });
+}
+chips($("fJenis"),"jenis",2);chips($("fRasa"),"rasa",4);chips($("fDaerah"),"daerah",3);
+function match(d){
+  const q=S.q.trim().toLowerCase();
+  return (S.jenis==="Semua"||d[2]===S.jenis)&&(S.rasa==="Semua"||d[4]===S.rasa)&&(S.daerah==="Semua"||d[3]===S.daerah)
+    &&(!q||d.join(" ").toLowerCase().includes(q));
+}
+function card(d,big){
+  return `<div class="e">${d[1]}</div><h2>${d[0]}</h2><p>${d[5]}</p><div class="meta"><span class="tag">${d[2]}</span><span class="tag">${d[4]}</span><span class="tag">${d[3]}</span></div>`;
+}
+function render(){
+  const r=D.filter(match);
+  $("count").textContent=r.length+" hasil";
+  $("grid").innerHTML=r.length?r.map(d=>`<article class="card">${card(d)}</article>`).join(""):
+    `<div class="empty">Belum ada yang cocok. Coba kata lain atau pilih "Semua" pada filter.</div>`;
+}
+$("q").addEventListener("input",e=>{S.q=e.target.value;render()});
+$("rnd").onclick=()=>{
+  const r=D.filter(match);const p=$("pick");
+  if(!r.length){p.hidden=false;p.innerHTML="Tidak ada pilihan dengan filter ini. Ubah filter dulu.";return}
+  const d=r[Math.floor(Math.random()*r.length)];
+  p.hidden=false;p.innerHTML=`<div class="card" style="border:0;padding:0">${card(d)}</div>`;
+  p.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"nearest"});
+};
+render();
+</script>
+</body>
+</html>
